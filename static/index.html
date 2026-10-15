@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gemini Web API Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="app-wrapper">
+  <!-- Top Application Header -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="brand-icon">✨</div>
+      <span class="brand-title">Gemini Web Studio</span>
+      <span class="brand-badge">OpenAI Proxy</span>
+    </div>
+
+    <div class="header-status-group">
+      <!-- API Server Status -->
+      <div class="status-pill" id="status-server-pill" title="Local API Server Connectivity">
+        <span class="status-dot online" id="status-server-dot"></span>
+        <span id="status-server-text">API Online</span>
+      </div>
+
+      <!-- Gemini Web Session Status -->
+      <div class="status-pill" id="status-session-pill" title="Gemini Web Session Authentication">
+        <span class="status-dot warning" id="status-session-dot"></span>
+        <span id="status-session-text">Session: Checking...</span>
+      </div>
+
+      <!-- Active Model -->
+      <div class="status-pill" id="status-model-pill">
+        <span id="status-model-text">gemini-web</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn-pill btn-primary" id="btn-header-login">
+        <span>🔑</span> Browser Login
+      </button>
+      <button class="btn-icon" id="btn-open-settings" title="API Settings">
+        ⚙️
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <div class="main-container">
+    <!-- Left Configuration Sidebar -->
+    <aside class="sidebar" id="app-sidebar">
+      <div>
+        <div class="sidebar-section-title">Model Settings</div>
+        <div class="form-group">
+          <label class="form-label" for="select-model">Model Alias</label>
+          <select class="form-control" id="select-model">
+            <option value="gemini-4-argon" selected>Gemini 4 Argon (Complex tasks - Default)</option>
+            <option value="gemini-3.8-flash">Gemini 3.8 Flash (All-around help)</option>
+            <option value="gemini-3.1-pro">Gemini 3.1 Pro (Advanced reasoning)</option>
+            <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite (Fastest answers)</option>
+            <option value="gemini-web">gemini-web (Account Default)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="input-system-prompt">System Instruction</label>
+        <textarea class="form-control" id="input-system-prompt" rows="3" placeholder="You are a helpful, knowledgeable assistant.">You are a helpful, knowledgeable assistant.</textarea>
+      </div>
+
+      <div>
+        <div class="sidebar-section-title">Execution Controls</div>
+        <div class="switch-group">
+          <div class="switch-label-group">
+            <span class="form-label">Streaming (SSE)</span>
+            <span class="switch-subtext">Real-time token deltas</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-stream" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="switch-group" style="margin-top: 10px;">
+          <div class="switch-label-group">
+            <span class="form-label">Test / Simulation Mode</span>
+            <span class="switch-subtext">Test UI without browser login</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-mock-mode">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <div class="sidebar-section-title">Chat Operations</div>
+        <button class="btn-pill btn-secondary" id="btn-new-chat" style="width: 100%; justify-content: center;">
+          <span>💬</span> Start New Conversation
+        </button>
+      </div>
+
+      <div>
+        <div class="sidebar-section-title">Prompt Starters</div>
+        <div class="starters-list">
+          <button class="starter-btn" data-prompt="Design a creative and compelling book cover concept for my life story.">
+            ✨ Design a book cover for my life story
+          </button>
+          <button class="starter-btn" data-prompt="Help me organize my weekly tasks into high-priority, quick wins, and follow-ups.">
+            📎 Help me organize my weekly tasks
+          </button>
+          <button class="starter-btn" data-prompt="Quiz me on film and cinema with 5 questions ranging from classic to modern cinema.">
+            🎬 Quiz me on film and cinema
+          </button>
+          <button class="starter-btn" data-prompt="Explain retrieval-augmented generation (RAG) in simple terms with an example.">
+            🧠 Explain RAG with an example
+          </button>
+          <button class="starter-btn" data-prompt="Write a modern Python async web scraper using httpx and asyncio.">
+            🐍 Async Python web scraper
+          </button>
+        </div>
+      </div>
+
+      <div style="margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border-glass);">
+        <div class="switch-subtext" style="text-align: center;">
+          Local API: <a href="http://127.0.0.1:8000/docs" target="_blank" style="color: var(--accent-cyan); text-decoration: none;">API Docs (/docs)</a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center Chat Window -->
+    <main class="chat-container">
+      <div class="chat-messages" id="chat-messages">
+        <!-- Welcome Hero Box -->
+        <div class="welcome-hero" id="welcome-hero">
+          <h2>Welcome to Gemini Web Studio</h2>
+          <p>
+            This interactive studio sends standard OpenAI-compatible requests to your local endpoint <code>/v1/chat/completions</code> backed by your authenticated Gemini Web session.
+          </p>
+
+          <div class="session-alert-banner" id="session-banner">
+            <span id="session-banner-text">Checking Gemini Web authentication status...</span>
+            <button class="btn-pill btn-primary" id="btn-banner-login" style="padding: 4px 12px; font-size: 0.8rem;">
+              Log In Now
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Composer Input -->
+      <div class="composer-area">
+        <div class="composer-box" id="composer-card">
+          <textarea
+            class="prompt-textarea"
+            id="input-prompt"
+            rows="1"
+            placeholder="Type your prompt here... (Press Enter to send, Shift+Enter for new line)"
+          ></textarea>
+          
+          <div class="composer-actions">
+            <button class="btn-stop" id="btn-stop-generation" title="Stop Generation">
+              ⏹️
+            </button>
+            <button class="btn-send" id="btn-send-prompt" title="Send Prompt">
+              ➔
+            </button>
+          </div>
+        </div>
+        <div class="composer-hint">
+          Model: <span id="hint-model-name">gemini-web</span> • Endpoint: <code>http://127.0.0.1:8000/v1/chat/completions</code>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-backdrop" id="modal-settings">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">API Connection Settings</h3>
+      <button class="btn-icon" id="btn-close-settings">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label" for="setting-base-url">API Base URL</label>
+        <input class="form-control" type="text" id="setting-base-url" value="http://127.0.0.1:8000/v1">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="setting-api-key">Local API Key (Bearer Token)</label>
+        <input class="form-control" type="password" id="setting-api-key" placeholder="Enter API Key from .env">
+        <span class="switch-subtext">Automatically loaded from your local .env if available</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-pill btn-secondary" id="btn-cancel-settings">Cancel</button>
+      <button class="btn-pill btn-primary" id="btn-save-settings">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<!-- Browser Login Guide Modal -->
+<div class="modal-backdrop" id="modal-login-guide">
+  <div class="modal-card" style="max-width: 580px;">
+    <div class="modal-header">
+      <h3 class="modal-title">Authenticate Gemini Web</h3>
+      <button class="btn-icon" id="btn-close-login-guide">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Method Tabs -->
+      <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border-glass); padding-bottom: 10px; margin-bottom: 12px;">
+        <button class="btn-pill btn-primary" id="tab-btn-cookie" style="padding: 6px 14px; font-size: 0.85rem;">
+          🍪 Paste Cookie (Instant)
+        </button>
+        <button class="btn-pill btn-secondary" id="tab-btn-console" style="padding: 6px 14px; font-size: 0.85rem;">
+          💻 Terminal Command
+        </button>
+      </div>
+
+      <!-- Tab 1: Cookie Import -->
+      <div id="tab-content-cookie">
+        <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; margin-bottom: 8px;">
+          From your regular browser (Chrome, Edge, or Firefox) where you are already logged into <strong>gemini.google.com</strong>:
+        </p>
+        <ol style="margin-left: 20px; color: var(--text-muted); font-size: 0.82rem; line-height: 1.6; margin-bottom: 12px;">
+          <li>Press <kbd style="background: rgba(255,255,255,0.1); padding: 1px 4px; border-radius: 3px;">F12</kbd> (DevTools) ➔ <strong>Application</strong> (or Storage) ➔ <strong>Cookies</strong> ➔ <code>https://gemini.google.com</code></li>
+          <li>Copy the value of <strong><code>__Secure-1PSID</code></strong> (or copy your full Cookie string).</li>
+        </ol>
+        <div class="form-group">
+          <label class="form-label" for="input-cookie-paste">Paste Cookie Value or Full Cookie String:</label>
+          <textarea class="form-control" id="input-cookie-paste" rows="3" placeholder="e.g. __Secure-1PSID=g.a000... or paste the raw cookie value"></textarea>
+        </div>
+        <div id="cookie-import-feedback" style="font-size: 0.85rem; margin-top: 8px; min-height: 20px;"></div>
+        <button class="btn-pill btn-primary" id="btn-submit-cookie-import" style="margin-top: 8px; width: 100%; justify-content: center;">
+          ✓ Save & Activate Session
+        </button>
+      </div>
+
+      <!-- Tab 2: Terminal / Console -->
+      <div id="tab-content-console" style="display: none;">
+        <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; margin-bottom: 8px;">
+          Run either of these commands in your PowerShell or terminal in the project directory:
+        </p>
+        <div style="background: #090e17; border: 1px solid var(--border-glass); border-radius: var(--radius-sm); padding: 10px; margin-bottom: 10px;">
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Option A: Interactive browser setup</div>
+          <code style="color: #38bdf8; font-size: 0.85rem; user-select: all;">.\.venv\Scripts\python.exe scripts/setup_browser.py</code>
+        </div>
+        <div style="background: #090e17; border: 1px solid var(--border-glass); border-radius: var(--radius-sm); padding: 10px; margin-bottom: 12px;">
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Option B: Direct cookie import in console</div>
+          <code style="color: #38bdf8; font-size: 0.85rem; user-select: all;">.\.venv\Scripts\python.exe scripts/import_cookies.py "__Secure-1PSID=YOUR_COOKIE"</code>
+        </div>
+        <button class="btn-pill btn-secondary" id="btn-trigger-browser-login" style="width: 100%; justify-content: center;">
+          🚀 Open Visible Console Window
+        </button>
+        <div id="login-launcher-status" style="font-size: 0.85rem; color: #a5b4fc; margin-top: 8px;"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-pill btn-secondary" id="btn-dismiss-login-guide">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
